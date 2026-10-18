@@ -1,0 +1,20 @@
+{
+  "name": "ai-employee-portal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI社員ポータル：デフォルトテンプレートから複製したAI社員を管理する",
+  "type": "module",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node scripts/seed.js",
+    "agent": "node scripts/agent.js",
+    "template": "node scripts/template.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0"
+  }
+}

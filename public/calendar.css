@@ -1,0 +1,940 @@
+/* カレンダー：運用カレンダーのスタイル。
+   ほかの画面とぶつからないよう、すべて .calroot の中だけに効かせている。
+   元のテーマ変数は、このファイルの先頭でポータルの色に置き換える。 */
+.calroot {
+  --bg-card: #fff;
+  --bg-main: #faf7f0;
+  --bg-input: #fff;
+  --border: #e3dccb;
+  --text-primary: #2b3340;
+  --text-secondary: #6b6355;
+  --text-muted: #8a8273;
+  --accent: #5b7fd6;
+  --accent-hover: #4a6cc4;
+  --text-on-accent: #fff;
+  --error: #e0432e;
+  --shadow: rgba(26, 33, 48, .14);
+  --shadow-lg: rgba(26, 33, 48, .22);
+}
+/* 運用カレンダー 共有スタイル
+   配色はテーマ変数に追従。 */
+
+.calroot {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  /* 画面内に収める（ページ全体は縦スクロールさせない。内部の必要箇所だけスクロール）
+     引き算はナビ(約58)＋ナビ余白(24)＋app-shell上下padding(32)＝約114に安全マージンを足した値 */
+  height: calc(100vh - 124px);
+  overflow: hidden;
+  /* カレンダー固有色。🔵 部品の中だけで使う色は、こうして**その部品の根**に
+     ライト・ダーク両方を定義してよい（tokens.css へ出すのは画面をまたぐ色だけ）。 */
+  --holiday: #c0453f;
+  --satday: #3a6ea5;
+  --holiday-cell: rgba(192, 69, 63, 0.06);
+  --layer-warehouse: #d9822b;
+  --grid-line: var(--border);
+  --hour-h: 56px;
+}
+
+/* ===================== 左サイドバー ===================== */
+.calroot .sidebar {
+  flex: 0 0 224px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.calroot .clockCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.calroot .clock {
+  font-family: 'Consolas', 'SF Mono', 'SFMono-Regular', ui-monospace, 'Segoe UI Mono', 'Menlo', monospace;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+.calroot .clockDate {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+/* 当日出荷の依頼〆切（11:00）の状態表示。
+   🔴 色は直値で書かない（index.css の --st-* を使う）。直値の淡い塗りはライト前提で、
+      ダークで白帯になり文字が読めなくなる。 */
+.calroot .cutoff {
+  margin-top: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  text-align: left;
+  padding: 6px 9px;
+  border-radius: 6px;
+  line-height: 1.45;
+}
+.calroot .cutoffDot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.calroot .cutoffLabel {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.calroot .cutoffDetail {
+  display: block;
+  font-size: 11px;
+  opacity: 0.85;
+}
+.calroot .cutoff_ok { color: var(--st-ok);      background: var(--st-ok-bg); }
+.calroot .cutoff_closed { color: var(--st-danger);  background: var(--st-danger-bg); }
+.calroot .cutoff_holiday { color: var(--st-neutral); background: var(--st-neutral-bg); }
+
+.calroot .clockHoliday {
+  margin-top: 8px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-on-accent);
+  background: var(--holiday);
+  border-radius: 5px;
+  padding: 2px 8px;
+}
+
+.calroot .filterCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: auto; /* 左サイドの下部（左下）に配置 */
+}
+.calroot .filterHeading {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+.calroot .filterRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 4px;
+  border-radius: 7px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s;
+}
+.calroot .filterRow:hover {
+  background: var(--bg-main);
+}
+.calroot .dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.calroot .filterLabel {
+  font-size: 13px;
+  color: var(--text-primary);
+  flex: 1;
+}
+.calroot .filterRowOff .filterLabel {
+  color: var(--text-muted);
+}
+.calroot .filterRowOff .dot {
+  opacity: 0.28;
+}
+/* 🔴 見た目はレイヤー色の四角だけにしたいので、チェックボックス自体は透明にしている。
+   display:none にはしない＝Tabで辿れなくなるため。 */
+.calroot .hiddenCheck {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+/* 🔴 透明なチェックボックスにフォーカスが乗ったとき、行を光らせて位置を見せる。
+   これが無いとキーボード操作でいまどこにいるか分からない（WCAG 2.4.7）。 */
+.calroot .filterRow:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  background: var(--bg-main);
+}
+.calroot .hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding: 4px 2px 0;
+}
+
+/* 個人予定の「開始10分前」通知の状態（チェックが入っているときだけ出る） */
+/* 業務スプレッドシートへの近道（時計カードの下）。
+   🔵 見た目は〆切の帯と揃える（同じカードの中で幅・角丸が違うと落ち着かない）。 */
+.calroot .sheetLink {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+.calroot .sheetLink:hover {
+  background: var(--bg-main);
+}
+.calroot .sheetIcon {
+  flex: none;
+}
+.calroot .sheetLabel {
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  /* 🔴 店名の長いシート名でもサイドバーの幅を押し広げないよう1行で省略する */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===================== メイン ===================== */
+.calroot .main {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 10px 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.calroot .toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+  margin-bottom: 10px;
+}
+.calroot .monthTitle {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+.calroot .navBtn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: border-color 0.15s, color 0.15s;
+}
+.calroot .navBtn:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+.calroot .todayBtn {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.calroot .todayBtn:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+.calroot .spacer {
+  flex: 1;
+}
+
+/* 月/週/日 フローティング切替（画面右下に固定） */
+.calroot .floatToggle {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  display: inline-flex;
+  padding: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  gap: 3px;
+  box-shadow: 0 6px 20px var(--shadow-lg, var(--shadow));
+  z-index: 50;
+}
+.calroot .floatTab {
+  min-width: 40px;
+  height: 30px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+.calroot .floatTabActive {
+  color: var(--text-on-accent);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+}
+
+/* ===================== 月ビュー ===================== */
+.calroot .monthWrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 8px 4px;
+  min-height: 0;
+  overflow: hidden;
+}
+.calroot .dowRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+.calroot .dowCell {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  padding: 6px 0;
+}
+.calroot .dowSun { color: var(--holiday); }
+.calroot .dowSat { color: var(--satday); }
+
+.calroot .grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+  min-height: 0;
+}
+.calroot .cell {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-main);
+  padding: 5px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+  transition: background 0.12s, border-color 0.12s;
+}
+.calroot .cell:hover {
+  border-color: var(--accent);
+}
+.calroot .cellDim {
+  opacity: 0.4;
+}
+.calroot .cellToday {
+  border-color: var(--accent);
+  border-top: 3px solid var(--accent);
+  animation: today-pulse 2.8s ease-out infinite;
+}
+.calroot .cellHoliday {
+  background: var(--holiday-cell);
+}
+@keyframes today-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(91, 127, 214, 0.45); }
+  70% { box-shadow: 0 0 0 8px rgba(91, 127, 214, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(91, 127, 214, 0); }
+}
+
+.calroot .dateNumWrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+/* 🔴 日付の数字は button（キーボードから予定を追加する入口）。
+   見た目を変えないための打ち消しをここに入れる。🔵 background は .dateToday が上書きするので書かない。 */
+.calroot .dateNum {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+.calroot .dateSun { color: var(--holiday); }
+.calroot .dateSat { color: var(--satday); }
+.calroot .dateToday {
+  background: var(--accent);
+  color: var(--text-on-accent) !important;
+  font-weight: 700;
+}
+.calroot .holidayTag {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--holiday);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70px;
+}
+
+.calroot .events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+/* 予定のパネルは button（キーボード・読み上げで開けるように）。
+   🔴 button は四辺に枠が付くので、左だけ残して他を消す。 */
+.calroot .pill {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 0;
+  border-left: 3px solid var(--pill-color, var(--accent));
+  background: var(--pill-bg, rgba(91, 127, 214, 0.14));
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+}
+.calroot .pillTime {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--pill-color, var(--accent));
+  flex-shrink: 0;
+}
+.calroot .pillTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 未稼働（予定/OFF）ジョブは薄く表示＋点線枠で「まだ動かない」ことを示す */
+.calroot .pillInactive {
+  opacity: 0.55;
+  border-left-style: dashed;
+}
+.calroot .pillStatus {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--pill-color, var(--accent));
+  border: 1px solid var(--pill-color, var(--accent));
+  border-radius: 3px;
+  padding: 0 3px;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+.calroot .moreTag {
+  font-size: 10px;
+  color: var(--text-secondary);
+  padding: 0 4px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  text-align: left;
+}
+
+/* ===================== 週/日 タイムグリッド ===================== */
+.calroot .tgWrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 8px 4px;
+  min-height: 0;
+}
+.calroot .tgHeader {
+  display: flex;
+  border-bottom: 1px solid var(--grid-line);
+  flex-shrink: 0;
+}
+.calroot .tgGutter {
+  width: 52px;
+  flex-shrink: 0;
+}
+.calroot .tgDayHead {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0 8px;
+  gap: 3px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.calroot .tgDayHead:hover {
+  background: var(--bg-main);
+}
+.calroot .tgDow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+.calroot .tgDateNum {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+.calroot .tgAllDay {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 0 3px;
+}
+.calroot .tgAllDayPill {
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 1px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 0;
+  border-left: 3px solid var(--pill-color, var(--accent));
+  background: var(--pill-bg, rgba(91, 127, 214, 0.14));
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+.calroot .tgScroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+.calroot .tgGrid {
+  display: flex;
+  height: calc(var(--hour-h) * 24);
+}
+.calroot .tgHourLabel {
+  height: var(--hour-h);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding-right: 8px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.calroot .tgCol {
+  flex: 1;
+  border-left: 1px solid var(--grid-line);
+  position: relative;
+}
+.calroot .tgColClosed {
+  background: var(--holiday-cell);
+}
+.calroot .tgHourCell {
+  height: var(--hour-h);
+  border-top: 1px solid var(--grid-line);
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+}
+.calroot .tgHourCell:hover {
+  background: rgba(91, 127, 214, 0.05);
+}
+.calroot .tgEvent {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  border-radius: 4px;
+  border: 0;
+  border-left: 3px solid var(--pill-color, var(--accent));
+  background: var(--pill-bg, rgba(91, 127, 214, 0.16));
+  padding: 3px 5px;
+  overflow: hidden;
+  z-index: 4;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  font-family: inherit;
+  text-align: left;
+}
+.calroot .tgEventTitle {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 14px;
+}
+.calroot .tgEventTime {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 13px;
+}
+.calroot .nowLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  z-index: 5;
+}
+.calroot .nowDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(91, 127, 214, 0.8);
+}
+.calroot .nowBar {
+  flex: 1;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(91, 127, 214, 0.5);
+}
+
+/* ===================== イベント詳細ポップアップ（BadgePopup相当） ===================== */
+.calroot .popup {
+  position: fixed;
+  width: 268px;
+  z-index: 9999;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--pop-color, var(--accent));
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 12px 40px var(--shadow-lg, var(--shadow));
+}
+.calroot .popupLayer {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-on-accent);
+  background: var(--pop-color, var(--accent));
+  border-radius: 4px;
+  padding: 1px 7px;
+  margin-bottom: 8px;
+}
+.calroot .popupTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+.calroot .popupMeta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.calroot .popupStatus {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--layer-warehouse) 14%, transparent);
+  border-left: 3px solid var(--layer-warehouse);
+  border-radius: 0 6px 6px 0;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.calroot .popupDesc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  /* 続けて実行したAI社員の履歴を1件にまとめたとき、1回ずつ改行して並べるため */
+  white-space: pre-line;
+}
+.calroot .popupActions {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+/* 削除ボタンの左に出す注意書き（コードに書いた予定＝Amazonセールを消すとき） */
+.calroot .popupHint {
+  flex: 1;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  text-align: left;
+}
+.calroot .popupDelete {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--error);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+.calroot .popupDelete:hover {
+  border-color: var(--error);
+}
+
+/* ===================== 登録・編集モーダル ===================== */
+.calroot .modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 24px;
+}
+.calroot .modal {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 12px 48px var(--shadow-lg, var(--shadow));
+  padding: 22px 24px;
+}
+.calroot .modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.calroot .modalTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.calroot .modalClose {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.calroot .modalClose:hover {
+  background: var(--bg-main);
+  color: var(--text-primary);
+}
+.calroot .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.calroot .fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.calroot .input,
+.calroot .selectInput {
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+.calroot .input:focus,
+.calroot .selectInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(91, 127, 214, 0.22);
+}
+.calroot .timeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.calroot .timeInput {
+  flex: 1;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.calroot .timeSep {
+  color: var(--text-secondary);
+}
+.calroot .allDayRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.calroot .modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+.calroot .btnCancel {
+  padding: 9px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.calroot .btnSave {
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  color: var(--text-on-accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.calroot .btnSave:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.calroot .legendNote {
+  margin: 8px 8px 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  flex-shrink: 0;
+}
+
+/* ===================== レスポンシブ ===================== */
+@media (max-width: 900px) {
+  /* 狭幅ではサイドバーを上に積み、固定高さを解除して通常スクロールに戻す */
+  .calroot { flex-direction: column; height: auto; overflow: visible; }
+  .calroot .sidebar { flex-basis: auto; flex-direction: row; flex-wrap: wrap; }
+  .calroot .clockCard,
+.calroot .filterCard { flex: 1 1 220px; }
+  .calroot .filterCard { margin-top: 0; }
+  .calroot .main { min-height: 70vh; }
+  .calroot .grid { min-height: 440px; }
+}
+
+/* スマホ（〜560px）。7列は崩さず、1マスの中身を削って読めるようにする。
+   🔴 列を減らす（縦1列にする）案は採らない＝週の並びが消えるとカレンダーではなくなる。
+   🔵 予定名は1件だけ出し、残りは「＋N件」に寄せる（タップでポップアップ）。 */
+@media (max-width: 560px) {
+  .calroot .toolbar { flex-wrap: wrap; row-gap: 8px; }
+  .calroot .monthTitle { font-size: 16px; }
+  .calroot .monthWrap { padding: 0 2px 4px; }
+  .calroot .grid { gap: 2px; min-height: 380px; }
+  .calroot .cell { padding: 3px 3px; border-radius: 7px; gap: 2px; }
+  .calroot .dowCell { font-size: 10px; padding: 4px 0; }
+  .calroot .pill { font-size: 10px; padding: 1px 4px; }
+  .calroot .clock { font-size: 28px; }
+  .calroot .sidebar { gap: 10px; }
+  .calroot .clockCard,
+.calroot .filterCard { flex: 1 1 100%; }
+  /* ポップアップ・モーダルは画面幅に収める（はみ出すと閉じるボタンが押せない） */
+  .calroot .popup { width: min(268px, calc(100vw - 24px)); }
+  .calroot .modal { width: min(420px, calc(100vw - 24px)); }
+}
+
+/* ===================== キーボード操作の見え方 =====================
+   🔴 予定・日付・リンクは button／a なので Tab で辿れる。
+      辿れても**どこにいるか見えない**と使えないので、輪郭を必ず出す。
+   🔵 :focus-visible ＝キーボード操作のときだけ出る（マウスクリックでは出ない）。 */
+.calroot .dateNum:focus-visible,
+.calroot .tgDateNum:focus-visible,
+.calroot .pill:focus-visible,
+.calroot .moreTag:focus-visible,
+.calroot .tgEvent:focus-visible,
+.calroot .tgAllDayPill:focus-visible,
+.calroot .sheetLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ===================== ポータルに合わせた調整 ===================== */
+/* 画面の上下の余白（main の padding 24px×2）だけ引いて、1画面に収める */
+.calroot { height: calc(100vh - 48px); }
+.calroot .layerCount { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+/* AI社員の予定の状態（○予定・●結果あり・✓そのまま受け取った…） */
+.calroot .pillMark { flex-shrink: 0; font-weight: 700; color: var(--pill-color, var(--accent)); }
+.calroot .popupRequest { font-size: 12px; color: var(--text-primary); background: var(--bg-main); border-radius: 6px; padding: 6px 8px; margin: 6px 0; white-space: pre-wrap; max-height: 120px; overflow: auto; line-height: 1.6; }
+.calroot .popupActions .btnSave, .calroot .popupActions .btnCancel { padding: 5px 10px; font-size: 12px; }
+.calroot .modal { max-width: 520px; max-height: calc(100vh - 48px); overflow: auto; }
+.calroot textarea.input { min-height: 96px; resize: vertical; font-family: inherit; line-height: 1.6; }
+.calroot .fieldRow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+.calroot .hint { margin: 0; }

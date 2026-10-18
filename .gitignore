@@ -1,0 +1,5 @@
+node_modules/
+# 会社ごとのデータ（AI社員・依頼の記録）は持ち運ばない。持ち運ぶのは template/ とパックだけ
+data/
+*.tmp
+.env
